@@ -90,6 +90,7 @@ func handleGetPriceList(writer http.ResponseWriter, r *http.Request) {
 	log.Println("controller: handlGetPrice: got request Body with ", r.Body)
 	log.Println("controller: handlGetPrice: got request Form with ", r.Form)
 
+	//get query results
 	prodPriceList, err := service.GetAllProductPrice()
 	if err != nil {
 		log.Println("controller: handleGetPriceList: got error with code: ", err.Error())
@@ -98,10 +99,10 @@ func handleGetPriceList(writer http.ResponseWriter, r *http.Request) {
 
 	log.Println("controller: handleGetPriceList: got productPriceList ", prodPriceList)
 
-	//respData := model.ProductPrice{productId,productName, productPrice}
-	//fmt.Fprintf(writer, )
+	//format data to json format
 	writer.Header().Set("Content-Type", "application/json")
 	json, _ := json2.Marshal(prodPriceList)
 	_, _ = writer.Write(json)
+
 	return
 }
