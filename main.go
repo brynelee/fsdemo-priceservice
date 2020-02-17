@@ -22,7 +22,7 @@ func init() {
 
 func main() {
 
-	log.Println("fsdemo-priceservice is loading in main().")
+	log.Println("main: fsdemo-priceservice is loading in main().")
 
 	cntl := controller.NewBaseController()
 
@@ -35,7 +35,12 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	log.Println("Price Service will start to on ", appConfig.Address)
+	log.Println("main: Price Service will start to on ", appConfig.Address)
 	_ = server.ListenAndServe()
 
 }
+
+//todo: add makefile to the project
+//todo: add environment setup configuration capability for deployment
+//todo: add testing support for the application
+//todo: add template support for http response
