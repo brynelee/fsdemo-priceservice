@@ -5,8 +5,8 @@ import (
 )
 
 type ProductPrice struct {
-	ProductId   int
-	ProductName string
-	Price       float64
-	UpdateTime  time.Time
+	ProductId   int       `json:"ProductId"`
+	ProductName string    `json:"ProductName"`
+	Price       float64   `json:"Price"`
+	UpdateTime  time.Time `json:"UpdateTime"`
 }

@@ -31,7 +31,7 @@ func NewBaseController() *PSController {
 	newController.Mux.HandleFunc(baseURL, helloRequest)
 
 	//handle "/priceservice/prices?productid=xxx&productname=xxx"
-	newController.Mux.HandleFunc(baseURL+"/prices", handleGetPrice)
+	newController.Mux.HandleFunc(baseURL+"/prices", handlePricesRequest)
 
 	//handle "/priceservice/pricelist
 	newController.Mux.HandleFunc(baseURL+"/pricelist", handleGetPriceList)
@@ -46,11 +46,21 @@ func helloRequest(writer http.ResponseWriter, request *http.Request) {
 	_, _ = fmt.Fprintf(writer, "Hello, this is from Price Service, request url is: ", request.URL.Path[1:])
 }
 
+// handle request to the "/priceservice/prices"
+func handlePricesRequest(writer http.ResponseWriter, r *http.Request) {
+
+	if r.Method == "GET" {
+		handleGetPrice(writer, r)
+	} else {
+		handlePostPrices(writer, r)
+	}
+
+}
+
 // handle GET "/priceservice/prices?productid=xxx&productname=xxx"
 // input: productid int, productname string
 // output: struct { productid int, productname string, productprice big.Float}
 func handleGetPrice(writer http.ResponseWriter, r *http.Request) {
-
 	_ = r.ParseForm()
 	log.Println("controller: handlGetPrice: got request Header with ", r.Header)
 	log.Println("controller: handlGetPrice: got request Body with ", r.Body)
@@ -62,7 +72,7 @@ func handleGetPrice(writer http.ResponseWriter, r *http.Request) {
 	}
 	productName := r.FormValue("productname")
 
-	prodPrice, err := service.GetProudctByIDAndName(productId, productName)
+	prodPrice, err := service.GetProductPriceByIDAndName(productId, productName)
 	if err != nil {
 		log.Println("controller: handleGetPrice: got error with code: ", err.Error())
 		writer.WriteHeader(501)
@@ -79,6 +89,48 @@ func handleGetPrice(writer http.ResponseWriter, r *http.Request) {
 	json, _ := json2.Marshal(pp)
 	_, _ = writer.Write(json)
 	return
+}
+
+// handle POST "/priceservice/prices"
+// input:
+// output: struct { productid int, productname string, productprice big.Float}
+func handlePostPrices(writer http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	bodyLength := r.ContentLength
+	body := make([]byte, bodyLength)
+	_, err = r.Body.Read(body)
+	if err != nil {
+		log.Println("controller: handlePostPrices: error got from r.Body.Read(body). ")
+	}
+
+	var ppuList []model.ProductPrice
+
+	err = json2.Unmarshal(body, &ppuList)
+
+	if err != nil {
+		log.Println("controller: handlePostPrices: error got from json2. Unmarshal: " + err.Error())
+	}
+
+	log.Println("controller: handlePostPrices: got POST request with payload: ", ppuList)
+
+	updatedPPUList, err := service.GetProductPriceList(ppuList)
+
+	if err != nil {
+		log.Println("controller: handlePostPrices: service.GetProductPriceList called failed with error: ", err.Error())
+		writer.WriteHeader(500)
+		_, _ = fmt.Fprintf(writer, "查询价格失败。错误返回信息： %s", err.Error())
+		return
+	}
+
+	//format data to json format
+	writer.Header().Set("Content-Type", "application/json")
+	json, _ := json2.Marshal(updatedPPUList)
+	_, _ = writer.Write(json)
+
+	return
+
 }
 
 // handle GET "/priceservice/pricelist"

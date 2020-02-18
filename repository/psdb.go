@@ -59,6 +59,33 @@ func GetProductPriceByIDAndName(productId int, productName string) (productPrice
 	return
 }
 
+func GetProductPriceList(ppuList []model.ProductPrice) (ppuListUpdated []model.ProductPrice, errCode error) {
+
+	log.Println("repository: GetProductPriceList called ...", ppuList)
+
+	queryStr := "select product_price, update_time from productpricetable where product_id=? and product_name=?"
+
+	var nullPrice sql.NullFloat64
+	var nullTime sql.NullTime
+	for _, ppu := range ppuList {
+		result := MysqlDb.QueryRow(queryStr, ppu.ProductId, ppu.ProductName)
+		if errCode = result.Scan(&nullPrice, &nullTime); errCode != nil {
+			log.Println("repository: GetProductPriceList: query error for product price with ID and name: ", ppu.ProductId, ppu.ProductName)
+		} else {
+			var productPrice float64 = 0
+			var updateTime time.Time
+			if nullPrice.Valid {
+				productPrice = nullPrice.Float64
+			}
+			if nullTime.Valid {
+				updateTime = nullTime.Time
+			}
+			ppuListUpdated = append(ppuListUpdated, model.ProductPrice{ppu.ProductId, ppu.ProductName, productPrice, updateTime})
+		}
+	}
+	return
+}
+
 func GetAllProductPrice() (productPriceList []model.ProductPrice, errCode error) {
 
 	log.Println("repository: GetAllProductPrice called.")
