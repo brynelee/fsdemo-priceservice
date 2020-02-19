@@ -50,7 +50,20 @@ func helloRequest(writer http.ResponseWriter, request *http.Request) {
 func handlePricesRequest(writer http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
-		handleGetPrice(writer, r)
+
+		_ = r.ParseForm()
+		log.Println("controller: handlGetPrice: got request Header with ", r.Header)
+		log.Println("controller: handlGetPrice: got request Body with ", r.Body)
+		log.Println("controller: handlGetPrice: got request Form with ", r.Form)
+
+		if len(r.Form) > 0 {
+			// single product price query
+			handleGetPrice(writer, r)
+		} else {
+			// query for all product price
+			handleGetPriceList(writer, r)
+		}
+
 	} else {
 		handlePostPrices(writer, r)
 	}
@@ -61,10 +74,6 @@ func handlePricesRequest(writer http.ResponseWriter, r *http.Request) {
 // input: productid int, productname string
 // output: struct { productid int, productname string, productprice big.Float}
 func handleGetPrice(writer http.ResponseWriter, r *http.Request) {
-	_ = r.ParseForm()
-	log.Println("controller: handlGetPrice: got request Header with ", r.Header)
-	log.Println("controller: handlGetPrice: got request Body with ", r.Body)
-	log.Println("controller: handlGetPrice: got request Form with ", r.Form)
 
 	productId, err := strconv.Atoi(r.FormValue("productid"))
 	if err != nil {
@@ -102,7 +111,7 @@ func handlePostPrices(writer http.ResponseWriter, r *http.Request) {
 	body := make([]byte, bodyLength)
 	_, err = r.Body.Read(body)
 	if err != nil {
-		log.Println("controller: handlePostPrices: error got from r.Body.Read(body). ")
+		log.Println("controller: handlePostPrices: error got from r.Body.Read(body) and error is: ", err.Error())
 	}
 
 	var ppuList []model.ProductPrice
