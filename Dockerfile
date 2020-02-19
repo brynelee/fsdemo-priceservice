@@ -8,4 +8,4 @@ RUN go install -v ./...
 
 CMD ["fsdemo-priceservice"]
 
-EXPOSE 8080
+EXPOSE 8083
