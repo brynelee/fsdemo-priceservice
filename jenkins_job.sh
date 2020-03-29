@@ -3,6 +3,7 @@
 # clean the tool files before proceeding
 rm $1.yml || true
 rm change_image.sh || true
+rm -rf "${WORKSPACE}/fsdemo-usercenter" || true
 
 # get the change_image.sh and yaml file
 git clone https://github.com/brynelee/fsdemo-usercenter.git
