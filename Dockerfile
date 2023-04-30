@@ -1,4 +1,4 @@
-FROM golang:1.13-alpine
+FROM golang:1.19-alpine
 
 RUN  apk update && apk upgrade && apk add netcat-openbsd && apk add curl \
         && apk add --no-cache bash \
