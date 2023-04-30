@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/SkyAPM/go2sky"
+	"github.com/SkyAPM/go2sky/reporter"
 )
 
 /*func handler(writer http.ResponseWriter, request *http.Request) {
@@ -24,7 +27,20 @@ func main() {
 
 	log.Println("main: fsdemo-priceservice is loading in main().")
 
-	cntl := controller.NewBaseController()
+	//create skywalking reporter
+	rpt, err := reporter.NewGRPCReporter("127.0.0.1:11800")
+	if err != nil {
+		log.Fatalf("new reporter error %v \n", err)
+	}
+	defer rpt.Close()
+
+	//create skywalking tracer
+	tracer, err := go2sky.NewTracer("fsdemo-priceservice", go2sky.WithReporter(rpt))
+	if err != nil {
+		panic(err)
+	}
+
+	cntl := controller.NewBaseController(tracer)
 
 	server := &http.Server{
 		Addr:           appConfig.Address,

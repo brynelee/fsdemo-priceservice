@@ -9,22 +9,28 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/SkyAPM/go2sky"
 )
 
 const baseURL = "/priceservice"
 
+var psCtrler *PSController
+
 type PSController struct {
-	Mux *http.ServeMux
-	err error
+	Mux    *http.ServeMux
+	err    error
+	tracer *go2sky.Tracer
 }
 
-func NewBaseController() *PSController {
+func NewBaseController(tracer *go2sky.Tracer) *PSController {
 
 	log.Print("controller: NewBaseController: Calling into the NewBaseController...")
 
 	newController := &PSController{
 		http.NewServeMux(),
 		nil,
+		tracer,
 	}
 
 	//handle "/priceservice"
@@ -35,6 +41,8 @@ func NewBaseController() *PSController {
 
 	//handle "/priceservice/pricelist
 	newController.Mux.HandleFunc(baseURL+"/pricelist", handleGetPriceList)
+
+	psCtrler = newController
 
 	return newController
 }
@@ -57,6 +65,10 @@ func handlePricesRequest(writer http.ResponseWriter, r *http.Request) {
 		log.Println("controller: handlGetPrice: got request Form with ", r.Form)
 
 		if len(r.Form) > 0 {
+			/*subSpan, newCtx, err := psCtrler.tracer.CreateLocalSpan(ctx)
+			if err != nil {
+				log.Fatalf("error happened in handlePricesRequest handleGetPrice create local span \n")
+			}*/
 			// single product price query
 			handleGetPrice(writer, r)
 		} else {
@@ -74,6 +86,17 @@ func handlePricesRequest(writer http.ResponseWriter, r *http.Request) {
 // input: productid int, productname string
 // output: struct { productid int, productname string, productprice big.Float}
 func handleGetPrice(writer http.ResponseWriter, r *http.Request) {
+
+	span, _, err := psCtrler.tracer.CreateEntrySpan(r.Context(),
+		"handleGetPrice",
+		func(key string) (string, error) {
+			return r.Header.Get(key), nil
+		})
+	if err != nil {
+		log.Fatalf("error happened in handleGetPrice create local span \n")
+	}
+	//span.SetOperationName("handleGetPrice request")
+	span.Tag("handleGetPrice", "in")
 
 	productId, err := strconv.Atoi(r.FormValue("productid"))
 	if err != nil {
@@ -97,6 +120,9 @@ func handleGetPrice(writer http.ResponseWriter, r *http.Request) {
 	pp := model.ProductPrice{productId, productName, prodPrice, time.Now()}
 	json, _ := json2.Marshal(pp)
 	_, _ = writer.Write(json)
+
+	span.End()
+
 	return
 }
 
@@ -104,6 +130,17 @@ func handleGetPrice(writer http.ResponseWriter, r *http.Request) {
 // input:
 // output: struct { productid int, productname string, productprice big.Float}
 func handlePostPrices(writer http.ResponseWriter, r *http.Request) {
+
+	span, _, errSky := psCtrler.tracer.CreateEntrySpan(r.Context(),
+		"handlePostPrices",
+		func(key string) (string, error) {
+			return r.Header.Get(key), nil
+		})
+	if errSky != nil {
+		log.Fatalf("error happened in handlePostPrices create local span \n")
+	}
+	//span.SetOperationName("handlePostPrices request")
+	span.Tag("handlePostPrices", "in")
 
 	var err error
 
@@ -138,6 +175,8 @@ func handlePostPrices(writer http.ResponseWriter, r *http.Request) {
 	json, _ := json2.Marshal(updatedPPUList)
 	_, _ = writer.Write(json)
 
+	span.End()
+
 	return
 
 }
@@ -146,6 +185,17 @@ func handlePostPrices(writer http.ResponseWriter, r *http.Request) {
 // input:
 // output:
 func handleGetPriceList(writer http.ResponseWriter, r *http.Request) {
+
+	span, _, errSky := psCtrler.tracer.CreateEntrySpan(r.Context(),
+		"handleGetPriceList",
+		func(key string) (string, error) {
+			return r.Header.Get(key), nil
+		})
+	if errSky != nil {
+		log.Fatalf("error happened in handleGetPriceList create local span \n")
+	}
+	//span.SetOperationName("handleGetPriceList request")
+	span.Tag("handleGetPriceList", "in")
 
 	log.Println("controller: handlGetPrice: got request Header with ", r.Header)
 	log.Println("controller: handlGetPrice: got request Body with ", r.Body)
@@ -164,6 +214,8 @@ func handleGetPriceList(writer http.ResponseWriter, r *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	json, _ := json2.Marshal(prodPriceList)
 	_, _ = writer.Write(json)
+
+	span.End()
 
 	return
 }
